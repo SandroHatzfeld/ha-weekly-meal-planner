@@ -29,9 +29,10 @@
     },
     "error": {
       "invalid_auth": "Invalid API token.",
-      "cannot_connect": "Cannot connect to the server. Check the address.",
+      "cannot_connect": "Cannot connect to the server: {error}",
       "no_plans": "No plan is available for this token.",
-      "plan_missing": "This token has no access to the configured plan."
+      "plan_missing": "This token has no access to the configured plan.",
+      "wrong_url": "No Meal Planner found at this address. Enter only the app's address (without a path)."
     },
     "abort": {
       "already_configured": "This plan is already configured.",

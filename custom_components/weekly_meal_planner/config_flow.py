@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -19,8 +20,10 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
-from .api import MealPlannerApi, MealPlannerAuthError, MealPlannerError
+from .api import MealPlannerApi, MealPlannerAuthError, MealPlannerError, MealPlannerNotFoundError, normalize_url
 from .const import CONF_PLAN_ID, CONF_PLAN_NAME, DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 USER_SCHEMA = vol.Schema(
     {
@@ -39,6 +42,8 @@ class MealPlannerConfigFlow(ConfigFlow, domain=DOMAIN):
         self._url = ""
         self._token = ""
         self._plans: list[dict[str, Any]] = []
+        # Grund des letzten Verbindungsfehlers, wird im Dialog angezeigt
+        self._error_detail = ""
 
     async def _fetch_plans(self, url: str, token: str) -> tuple[list[dict[str, Any]], dict[str, str]]:
         api = MealPlannerApi(async_get_clientsession(self.hass), url, token)
@@ -46,7 +51,12 @@ class MealPlannerConfigFlow(ConfigFlow, domain=DOMAIN):
             plans = await api.get_plans()
         except MealPlannerAuthError:
             return [], {"base": "invalid_auth"}
-        except MealPlannerError:
+        except MealPlannerNotFoundError:
+            # Server antwortet, aber unter dieser Adresse gibt es keine Mealplanner-API
+            return [], {"base": "wrong_url"}
+        except MealPlannerError as err:
+            self._error_detail = str(err)
+            _LOGGER.warning("Weekly Meal Planner unter %s nicht erreichbar: %s", url, err)
             return [], {"base": "cannot_connect"}
         if not plans:
             return [], {"base": "no_plans"}
@@ -55,13 +65,16 @@ class MealPlannerConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            self._url = user_input[CONF_URL].strip().rstrip("/")
+            self._url = normalize_url(user_input[CONF_URL])
             self._token = user_input[CONF_API_TOKEN].strip()
             self._plans, errors = await self._fetch_plans(self._url, self._token)
             if not errors:
                 return await self.async_step_plan()
         return self.async_show_form(
-            step_id="user", data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input), errors=errors
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
+            errors=errors,
+            description_placeholders={"error": self._error_detail},
         )
 
     async def async_step_plan(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -97,6 +110,7 @@ class MealPlannerConfigFlow(ConfigFlow, domain=DOMAIN):
                 return self.async_update_reload_and_abort(entry, data_updates={CONF_API_TOKEN: token})
         return self.async_show_form(
             step_id="reauth_confirm",
+            description_placeholders={"error": self._error_detail},
             data_schema=vol.Schema(
                 {vol.Required(CONF_API_TOKEN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))}
             ),

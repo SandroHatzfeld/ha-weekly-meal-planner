@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .api import MealPlannerError
+from .api import MealPlannerError, MealPlannerNotFoundError
 from .const import MAX_RANGE_DAYS
 from .coordinator import MealPlannerConfigEntry
 from .entity import MealPlannerEntity
@@ -61,6 +61,8 @@ class MealPlannerCalendar(MealPlannerEntity, CalendarEntity):
                 dishes = await self.coordinator.api.get_dishes(self.coordinator.plan_id, start, chunk_end)
                 events.extend(_event(dish) for dish in dishes)
                 start = chunk_end + timedelta(days=1)
+        except MealPlannerNotFoundError:
+            return []  # ältere App-Version ohne Gerichte-Endpunkt
         except MealPlannerError as err:
             raise HomeAssistantError(f"Gerichte konnten nicht geladen werden: {err}") from err
         return events

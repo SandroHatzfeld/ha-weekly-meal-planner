@@ -14,7 +14,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .api import MealPlannerApi, MealPlannerAuthError, MealPlannerError
+from .api import MealPlannerApi, MealPlannerAuthError, MealPlannerError, MealPlannerNotFoundError
 from .const import CONF_PLAN_ID, DISHES_FUTURE_DAYS, DISHES_PAST_DAYS, DOMAIN, UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +41,19 @@ class MealPlannerCoordinator(DataUpdateCoordinator[MealPlannerData]):
         super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=UPDATE_INTERVAL)
         self.api = api
         self.plan_id: str = entry.data[CONF_PLAN_ID]
+        self._warned_old_server = False
+
+    async def _dishes(self, today) -> list[dict[str, Any]]:
+        # ältere App-Versionen kennen den Gerichte-Endpunkt noch nicht: Einkaufslisten trotzdem anbieten
+        try:
+            return await self.api.get_dishes(
+                self.plan_id, today - timedelta(days=DISHES_PAST_DAYS), today + timedelta(days=DISHES_FUTURE_DAYS)
+            )
+        except MealPlannerNotFoundError:
+            if not self._warned_old_server:
+                _LOGGER.warning("Der Mealplanner-Server kennt den Gerichte-Endpunkt nicht – bitte die App aktualisieren")
+                self._warned_old_server = True
+            return []
 
     async def _async_update_data(self) -> MealPlannerData:
         today = dt_util.now().date()
@@ -48,9 +61,7 @@ class MealPlannerCoordinator(DataUpdateCoordinator[MealPlannerData]):
             lists = await self.api.get_lists(self.plan_id)
             item_lists, dishes = await asyncio.gather(
                 asyncio.gather(*(self.api.get_items(entry["id"]) for entry in lists)),
-                self.api.get_dishes(
-                    self.plan_id, today - timedelta(days=DISHES_PAST_DAYS), today + timedelta(days=DISHES_FUTURE_DAYS)
-                ),
+                self._dishes(today),
             )
         except MealPlannerAuthError as err:
             raise ConfigEntryAuthFailed from err

@@ -104,3 +104,18 @@ async def test_unreachable_on_setup_retries(hass, fake_api, config_entry):
 async def test_unload(hass, setup_integration, _):
     assert await hass.config_entries.async_unload(setup_integration.entry_id)
     assert setup_integration.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_old_server_without_dishes_endpoint(hass, fake_api, config_entry):
+    from custom_components.weekly_meal_planner.api import MealPlannerNotFoundError
+
+    async def missing(*args, **kwargs):
+        raise MealPlannerNotFoundError("/plans/plan1/dishes")
+
+    fake_api.get_dishes = missing
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert config_entry.state is ConfigEntryState.LOADED
+    assert hass.states.get("todo.wg_supermarkt").state == "1"
+    assert hass.states.get("sensor.wg_today_s_dish").state == "unknown"

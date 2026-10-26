@@ -29,9 +29,10 @@
     },
     "error": {
       "invalid_auth": "Das API-Token ist ungültig.",
-      "cannot_connect": "Server nicht erreichbar. Adresse prüfen.",
+      "cannot_connect": "Server nicht erreichbar: {error}",
       "no_plans": "Mit diesem Token ist kein Plan verbunden.",
-      "plan_missing": "Dieses Token hat keinen Zugriff auf den eingerichteten Plan."
+      "plan_missing": "Dieses Token hat keinen Zugriff auf den eingerichteten Plan.",
+      "wrong_url": "Unter dieser Adresse wurde kein Mealplanner gefunden. Bitte nur die Adresse der App eingeben (ohne Pfad)."
     },
     "abort": {
       "already_configured": "Dieser Plan ist bereits eingerichtet.",

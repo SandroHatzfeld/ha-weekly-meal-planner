@@ -68,3 +68,25 @@ async def test_reauth(hass, fake_api, setup_integration):
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_API_TOKEN: "new-token"})
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "reauth_successful"
     assert entry.data[CONF_API_TOKEN] == "new-token"
+
+
+async def test_url_is_normalized(hass, fake_api):
+    result = await _start(hass, url="mealplanner.example.com/shop?list=1")
+    assert result["data"][CONF_URL] == "https://mealplanner.example.com"
+
+
+async def test_wrong_url(hass, fake_api):
+    from custom_components.weekly_meal_planner.api import MealPlannerNotFoundError
+
+    async def not_found():
+        raise MealPlannerNotFoundError("/plans")
+
+    fake_api.get_plans = not_found
+    result = await _start(hass)
+    assert result["errors"] == {"base": "wrong_url"}
+
+
+async def test_cannot_connect_shows_reason(hass, fake_api):
+    fake_api.reachable = False
+    result = await _start(hass)
+    assert result["description_placeholders"]["error"] == "down"

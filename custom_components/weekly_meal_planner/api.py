@@ -5,8 +5,31 @@ from __future__ import annotations
 import asyncio
 from datetime import date
 from typing import Any
+from urllib.parse import urlsplit
 
 import aiohttp
+
+
+def normalize_url(url: str) -> str:
+    """Nur Schema, Host und Port: „mealplanner.example.com/shop“ → „https://mealplanner.example.com“."""
+    url = url.strip()
+    if "://" not in url:
+        url = f"https://{url}"
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}"
+
+
+def _describe(err: Exception) -> str:
+    """Verständlicher Grund für Verbindungsfehler (erscheint im Einrichtungsdialog und im Log)."""
+    if isinstance(err, TimeoutError):
+        return "Zeitüberschreitung – der Server antwortet nicht"
+    if isinstance(err, (aiohttp.ClientConnectorCertificateError, aiohttp.ClientSSLError)):
+        return f"SSL-Zertifikat wird nicht akzeptiert ({err})"
+    if isinstance(err, aiohttp.ContentTypeError):
+        return f"Antwort ist kein JSON (HTTP {err.status}) – stimmt die Adresse?"
+    if isinstance(err, aiohttp.ClientConnectorError):
+        return f"Verbindung zu {err.host}:{err.port} fehlgeschlagen ({err.os_error})"
+    return str(err) or type(err).__name__
 
 
 class MealPlannerError(Exception):
@@ -30,7 +53,7 @@ class MealPlannerApi:
 
     def __init__(self, session: aiohttp.ClientSession, url: str, token: str) -> None:
         self._session = session
-        self._base = url.rstrip("/") + "/api/external"
+        self._base = normalize_url(url) + "/api/external"
         self._token = token
 
     async def _request(self, method: str, path: str, *, json: Any = None, params: dict[str, str] | None = None) -> Any:
@@ -48,12 +71,12 @@ class MealPlannerApi:
                 if response.status == 404:
                     raise MealPlannerNotFoundError(path)
                 if response.status >= 400:
-                    raise MealPlannerConnectionError(f"HTTP {response.status}: {await response.text()}")
+                    raise MealPlannerConnectionError(f"HTTP {response.status}: {(await response.text())[:200]}")
                 if response.status == 204:
                     return None
                 return await response.json()
         except (aiohttp.ClientError, TimeoutError, ValueError) as err:
-            raise MealPlannerConnectionError(str(err)) from err
+            raise MealPlannerConnectionError(_describe(err)) from err
 
     async def get_plans(self) -> list[dict[str, Any]]:
         return await self._request("GET", "/plans")
