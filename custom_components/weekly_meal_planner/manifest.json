@@ -1,0 +1,12 @@
+{
+  "domain": "weekly_meal_planner",
+  "name": "Weekly Meal Planner",
+  "codeowners": ["@SandroHatzfeld"],
+  "config_flow": true,
+  "documentation": "https://github.com/SandroHatzfeld/ha-weekly-meal-planner",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/SandroHatzfeld/ha-weekly-meal-planner/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

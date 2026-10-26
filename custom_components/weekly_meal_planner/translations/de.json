@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Weekly Meal Planner",
+        "description": "Adresse deines Mealplanners und ein API-Token (in der App unter Einstellungen → API-Tokens erstellen).",
+        "data": {
+          "url": "Adresse",
+          "api_token": "API-Token"
+        },
+        "data_description": {
+          "url": "z.B. https://mealplanner.example.com"
+        }
+      },
+      "plan": {
+        "title": "Plan",
+        "description": "Welcher Plan soll eingebunden werden?",
+        "data": {
+          "plan_id": "Plan"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Neues API-Token",
+        "description": "Das gespeicherte Token ist ungültig. Erstelle in der App ein neues.",
+        "data": {
+          "api_token": "API-Token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Das API-Token ist ungültig.",
+      "cannot_connect": "Server nicht erreichbar. Adresse prüfen.",
+      "no_plans": "Mit diesem Token ist kein Plan verbunden.",
+      "plan_missing": "Dieses Token hat keinen Zugriff auf den eingerichteten Plan."
+    },
+    "abort": {
+      "already_configured": "Dieser Plan ist bereits eingerichtet.",
+      "reauth_successful": "Token aktualisiert."
+    }
+  },
+  "entity": {
+    "calendar": {
+      "dishes": {
+        "name": "Gerichte"
+      }
+    },
+    "sensor": {
+      "open_items": {
+        "name": "Offen: {list}"
+      },
+      "dish_today": {
+        "name": "Heutiges Gericht"
+      },
+      "dish_tomorrow": {
+        "name": "Morgiges Gericht"
+      }
+    }
+  }
+}

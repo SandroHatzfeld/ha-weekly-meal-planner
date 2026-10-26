@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Weekly Meal Planner",
+        "description": "Address of your Meal Planner and an API token (create one in the app under Settings → API tokens).",
+        "data": {
+          "url": "URL",
+          "api_token": "API token"
+        },
+        "data_description": {
+          "url": "e.g. https://mealplanner.example.com"
+        }
+      },
+      "plan": {
+        "title": "Plan",
+        "description": "Which plan should be added?",
+        "data": {
+          "plan_id": "Plan"
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API token",
+        "description": "The stored token is no longer valid. Create a new one in the app.",
+        "data": {
+          "api_token": "API token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API token.",
+      "cannot_connect": "Cannot connect to the server. Check the address.",
+      "no_plans": "No plan is available for this token.",
+      "plan_missing": "This token has no access to the configured plan."
+    },
+    "abort": {
+      "already_configured": "This plan is already configured.",
+      "reauth_successful": "Token updated."
+    }
+  },
+  "entity": {
+    "calendar": {
+      "dishes": {
+        "name": "Dishes"
+      }
+    },
+    "sensor": {
+      "open_items": {
+        "name": "Open: {list}"
+      },
+      "dish_today": {
+        "name": "Today's dish"
+      },
+      "dish_tomorrow": {
+        "name": "Tomorrow's dish"
+      }
+    }
+  }
+}
