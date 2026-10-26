@@ -9,7 +9,7 @@
           "api_token": "API-Token"
         },
         "data_description": {
-          "url": "z.B. https://mealplanner.example.com"
+          "url": "Die Adresse, unter der du die App im Browser öffnest."
         }
       },
       "plan": {
