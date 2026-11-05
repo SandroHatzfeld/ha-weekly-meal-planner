@@ -85,6 +85,16 @@ async def test_sensors(hass, setup_integration):
     assert hass.states.get("sensor.wg_tomorrow_s_dish").state == "Curry"
 
 
+async def test_dish_sensor_without_dish(hass, setup_integration, fake_api, config_entry):
+    # Tag ohne Gericht: lesbarer Text statt „unknown“, auf Deutsch bei deutscher Oberfläche
+    fake_api.dishes = []
+    hass.config.language = "de"
+    await config_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.wg_today_s_dish").state == "Heute ist nichts geplant"
+    assert hass.states.get("sensor.wg_tomorrow_s_dish").state == "Morgen ist nichts geplant"
+
+
 async def test_auth_failure_starts_reauth(hass, setup_integration, fake_api):
     fake_api.token_valid = False
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
@@ -118,4 +128,4 @@ async def test_old_server_without_dishes_endpoint(hass, fake_api, config_entry):
     await hass.async_block_till_done()
     assert config_entry.state is ConfigEntryState.LOADED
     assert hass.states.get("todo.wg_supermarkt").state == "1"
-    assert hass.states.get("sensor.wg_today_s_dish").state == "unknown"
+    assert hass.states.get("sensor.wg_today_s_dish").state == "Nothing planned today"

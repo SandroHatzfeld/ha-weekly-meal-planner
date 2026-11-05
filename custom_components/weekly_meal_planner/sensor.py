@@ -75,8 +75,15 @@ class DishSensor(MealPlannerEntity, SensorEntity):
         return [dish for dish in self.coordinator.data.dishes if dish["date"] == day]
 
     @property
-    def native_value(self) -> str | None:
-        return ", ".join(dish["name"] for dish in self._dishes()) or None
+    def native_value(self) -> str:
+        # ohne Gericht ein lesbarer Text statt „Unbekannt“ (Dashboard, Sprachausgabe)
+        return ", ".join(dish["name"] for dish in self._dishes()) or self._nothing_planned()
+
+    def _nothing_planned(self) -> str:
+        german = (self.hass.config.language or "").startswith("de")
+        if self._offset == 0:
+            return "Heute ist nichts geplant" if german else "Nothing planned today"
+        return "Morgen ist nichts geplant" if german else "Nothing planned tomorrow"
 
     @property
     def extra_state_attributes(self) -> dict[str, list[dict[str, str | None]]]:
